@@ -10,15 +10,15 @@
     "nameBlockLetters": "TEST1",
     "department": "TEST1",
     "date": "2026-09-26",
-    "description": "",
-    "decision": "",
-    "committeeRemarks": "",
-    "committeeMemberDetails": "",
-    "member1Name": "",
-    "member1Date": "",
-    "member2Name": "",
-    "member2Date": "",
-    "member3Name": "",
-    "member3Date": ""
+    "description": "TEST1",
+    "decision": "approved",
+    "committeeRemarks": "TEST1",
+    "committeeMemberDetails": "TEST1",
+    "member1Name": "TEST1",
+    "member1Date": "2026-09-26",
+    "member2Name": "TEST1",
+    "member2Date": "2026-09-26",
+    "member3Name": "TEST1",
+    "member3Date": "2026-09-26"
   }
 ]
