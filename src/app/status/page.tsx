@@ -9,35 +9,50 @@ type TabFilter = "approved" | "rejected" | "pending";
 export default function StatusPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState("");
   const [activeTab, setActiveTab] = useState<TabFilter>("approved");
 
   useEffect(() => {
     async function load() {
       try {
         const res = await fetch("/api/submissions");
-        if (res.ok) setSubmissions(await res.json());
-      } catch { /* silent */ }
-      setLoading(false);
+        if (!res.ok) throw new Error("Failed to load submissions");
+        setSubmissions(await res.json());
+      } catch (err) {
+        setFetchError(err instanceof Error ? err.message : "Failed to load");
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);
 
+  const isPending = (s: Submission) => !s.decision;
+
   const tabFiltered = submissions.filter((s) =>
     activeTab === "approved" ? s.decision === "approved" :
     activeTab === "rejected" ? s.decision === "rejected" :
-    s.decision === ""
+    isPending(s)
   );
 
   const counts = {
     approved: submissions.filter((s) => s.decision === "approved").length,
     rejected: submissions.filter((s) => s.decision === "rejected").length,
-    pending: submissions.filter((s) => s.decision === "").length,
+    pending: submissions.filter(isPending).length,
   };
 
-  const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString("en-US", {
-      year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-    });
+  const formatDate = (iso: string) => {
+    if (!iso) return "N/A";
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return "N/A";
+      return d.toLocaleDateString("en-US", {
+        year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+      });
+    } catch {
+      return "N/A";
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -88,6 +103,13 @@ export default function StatusPage() {
             </button>
           ))}
         </div>
+
+        {/* Error state */}
+        {fetchError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+            {fetchError}
+          </div>
+        )}
 
         {/* Table */}
         {loading ? (

@@ -37,9 +37,7 @@ async function fetchFile(): Promise<{ content: Submission[]; sha: string } | nul
 }
 
 async function commitFile(content: Submission[], sha: string | null): Promise<void> {
-  const url = sha
-    ? `${API_BASE}/repos/${GITHUB_REPO}/contents/${DATA_FILE}`
-    : `${API_BASE}/repos/${GITHUB_REPO}/contents/${DATA_FILE}`;
+  const url = `${API_BASE}/repos/${GITHUB_REPO}/contents/${DATA_FILE}`;
 
   const body: Record<string, unknown> = {
     message: `Update submissions - ${new Date().toISOString()}`,

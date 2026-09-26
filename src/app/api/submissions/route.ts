@@ -2,6 +2,31 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAllSubmissions, addSubmission, updateSubmission } from "@/lib/github";
 import { Submission } from "@/lib/types";
 
+const VALID_DECISIONS = ["", "approved", "rejected"];
+const MAX_FIELD_LENGTH = 5000;
+
+function sanitize(body: Record<string, unknown>, stripCommittee = false): Record<string, string> {
+  const fields = [
+    "drugUsedFor", "genericDrugName", "brandName", "reasonRemark",
+    "applicantDetails", "nameBlockLetters", "department", "date",
+    "description", "decision", "committeeRemarks", "committeeMemberDetails",
+    "member1Name", "member1Date", "member2Name", "member2Date",
+    "member3Name", "member3Date",
+  ];
+  const result: Record<string, string> = {};
+  for (const f of fields) {
+    if (stripCommittee && ["decision", "committeeRemarks", "committeeMemberDetails",
+      "member1Name", "member1Date", "member2Name", "member2Date",
+      "member3Name", "member3Date"].includes(f)) continue;
+    result[f] = String(body[f] || "").slice(0, MAX_FIELD_LENGTH);
+  }
+  return result;
+}
+
+function validateDecision(decision: string): boolean {
+  return VALID_DECISIONS.includes(decision);
+}
+
 export async function GET() {
   try {
     const submissions = await getAllSubmissions();
@@ -14,7 +39,12 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    let body: Record<string, unknown>;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
 
     const requiredFields = [
       "drugUsedFor", "genericDrugName", "brandName", "reasonRemark",
@@ -26,27 +56,29 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const s = sanitize(body, true);
+
     const submission: Submission = {
       id: crypto.randomUUID(),
       submittedAt: new Date().toISOString(),
-      drugUsedFor: body.drugUsedFor,
-      genericDrugName: body.genericDrugName,
-      brandName: body.brandName,
-      reasonRemark: body.reasonRemark,
-      applicantDetails: body.applicantDetails,
-      nameBlockLetters: body.nameBlockLetters,
-      department: body.department,
-      date: body.date,
-      description: body.description || "",
-      decision: body.decision || "",
-      committeeRemarks: body.committeeRemarks || "",
-      committeeMemberDetails: body.committeeMemberDetails || "",
-      member1Name: body.member1Name || "",
-      member1Date: body.member1Date || "",
-      member2Name: body.member2Name || "",
-      member2Date: body.member2Date || "",
-      member3Name: body.member3Name || "",
-      member3Date: body.member3Date || "",
+      drugUsedFor: s.drugUsedFor,
+      genericDrugName: s.genericDrugName,
+      brandName: s.brandName,
+      reasonRemark: s.reasonRemark,
+      applicantDetails: s.applicantDetails,
+      nameBlockLetters: s.nameBlockLetters,
+      department: s.department,
+      date: s.date,
+      description: "",
+      decision: "",
+      committeeRemarks: "",
+      committeeMemberDetails: "",
+      member1Name: "",
+      member1Date: "",
+      member2Name: "",
+      member2Date: "",
+      member3Name: "",
+      member3Date: "",
     };
 
     const saved = await addSubmission(submission);
@@ -59,24 +91,39 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json();
-
-    if (!body.id) {
-      return NextResponse.json({ error: "Missing submission id" }, { status: 400 });
+    let body: Record<string, unknown>;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
-    const updates: Partial<Submission> = {
-      description: body.description || "",
-      decision: body.decision || "",
-      committeeRemarks: body.committeeRemarks || "",
-      committeeMemberDetails: body.committeeMemberDetails || "",
-      member1Name: body.member1Name || "",
-      member1Date: body.member1Date || "",
-      member2Name: body.member2Name || "",
-      member2Date: body.member2Date || "",
-      member3Name: body.member3Name || "",
-      member3Date: body.member3Date || "",
-    };
+    if (!body.id || typeof body.id !== "string") {
+      return NextResponse.json({ error: "Missing or invalid submission id" }, { status: 400 });
+    }
+
+    const updates: Partial<Submission> = {};
+
+    if (body.description !== undefined) updates.description = String(body.description || "").slice(0, MAX_FIELD_LENGTH);
+    if (body.decision !== undefined) {
+      const d = String(body.decision || "");
+      if (!validateDecision(d)) {
+        return NextResponse.json({ error: `Invalid decision value: "${d}". Must be "approved", "rejected", or empty.` }, { status: 400 });
+      }
+      updates.decision = d as "" | "approved" | "rejected";
+    }
+    if (body.committeeRemarks !== undefined) updates.committeeRemarks = String(body.committeeRemarks || "").slice(0, MAX_FIELD_LENGTH);
+    if (body.committeeMemberDetails !== undefined) updates.committeeMemberDetails = String(body.committeeMemberDetails || "").slice(0, MAX_FIELD_LENGTH);
+    if (body.member1Name !== undefined) updates.member1Name = String(body.member1Name || "").slice(0, MAX_FIELD_LENGTH);
+    if (body.member1Date !== undefined) updates.member1Date = String(body.member1Date || "").slice(0, MAX_FIELD_LENGTH);
+    if (body.member2Name !== undefined) updates.member2Name = String(body.member2Name || "").slice(0, MAX_FIELD_LENGTH);
+    if (body.member2Date !== undefined) updates.member2Date = String(body.member2Date || "").slice(0, MAX_FIELD_LENGTH);
+    if (body.member3Name !== undefined) updates.member3Name = String(body.member3Name || "").slice(0, MAX_FIELD_LENGTH);
+    if (body.member3Date !== undefined) updates.member3Date = String(body.member3Date || "").slice(0, MAX_FIELD_LENGTH);
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
+    }
 
     const updated = await updateSubmission(body.id, updates);
     if (!updated) {

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getTodayDate } from "@/lib/utils";
 
 type FormData = {
@@ -27,6 +28,7 @@ const initialData: FormData = {
 };
 
 export default function ReportPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState<FormData>(initialData);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -76,7 +78,7 @@ export default function ReportPage() {
                 className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
                 Submit Another
               </button>
-              <button onClick={() => setSubmitted(false)}
+              <button onClick={() => router.push("/status")}
                 className="bg-gray-800 text-white px-6 py-2 rounded-lg hover:bg-gray-900 transition-colors">
                 View All Requests
               </button>
