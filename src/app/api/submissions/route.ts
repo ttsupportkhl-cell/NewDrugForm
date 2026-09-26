@@ -66,6 +66,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const updates: Partial<Submission> = {
+      description: body.description || "",
       decision: body.decision || "",
       committeeRemarks: body.committeeRemarks || "",
       committeeMemberDetails: body.committeeMemberDetails || "",

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Submission } from "@/lib/types";
+import { getTodayDate } from "@/lib/utils";
 
 export default function DetailPage() {
   const params = useParams();
@@ -11,6 +12,19 @@ export default function DetailPage() {
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  // Editable committee fields
+  const [description, setDescription] = useState("");
+  const [decision, setDecision] = useState<"approved" | "rejected" | "">("");
+  const [committeeRemarks, setCommitteeRemarks] = useState("");
+  const [committeeMemberDetails, setCommitteeMemberDetails] = useState("");
+  const [members, setMembers] = useState([
+    { name: "", date: getTodayDate() },
+    { name: "", date: getTodayDate() },
+    { name: "", date: getTodayDate() },
+  ]);
 
   useEffect(() => {
     async function load() {
@@ -21,6 +35,16 @@ export default function DetailPage() {
         const found = data.find((s) => s.id === id);
         if (!found) throw new Error("Submission not found");
         setSubmission(found);
+        // Pre-fill committee fields
+        setDescription(found.description || "");
+        setDecision(found.decision || "");
+        setCommitteeRemarks(found.committeeRemarks || "");
+        setCommitteeMemberDetails(found.committeeMemberDetails || "");
+        setMembers([
+          { name: found.member1Name || "", date: found.member1Date || getTodayDate() },
+          { name: found.member2Name || "", date: found.member2Date || getTodayDate() },
+          { name: found.member3Name || "", date: found.member3Date || getTodayDate() },
+        ]);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load");
       } finally {
@@ -34,6 +58,44 @@ export default function DetailPage() {
     new Date(iso).toLocaleDateString("en-US", {
       year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit",
     });
+
+  const handleSave = async () => {
+    if (!submission) return;
+    setSaving(true);
+    setSaved(false);
+    try {
+      const res = await fetch("/api/submissions", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: submission.id,
+          description,
+          decision,
+          committeeRemarks,
+          committeeMemberDetails,
+          member1Name: members[0].name,
+          member1Date: members[0].date,
+          member2Name: members[1].name,
+          member2Date: members[1].date,
+          member3Name: members[2].name,
+          member3Date: members[2].date,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to save");
+      const updated = await res.json();
+      setSubmission(updated);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to save");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateMember = (index: number, field: "name" | "date", value: string) => {
+    setMembers((prev) => prev.map((m, i) => (i === index ? { ...m, [field]: value } : m)));
+  };
 
   if (loading) {
     return (
@@ -60,13 +122,13 @@ export default function DetailPage() {
         <div className="flex justify-between items-center mb-6">
           <Link href="/report" className="text-indigo-600 hover:underline text-sm">&larr; Back to Report</Link>
           <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-            submission.decision === "approved"
+            decision === "approved"
               ? "bg-green-100 text-green-800"
-              : submission.decision === "rejected"
+              : decision === "rejected"
               ? "bg-red-100 text-red-800"
               : "bg-yellow-100 text-yellow-800"
           }`}>
-            {submission.decision === "approved" ? "Approved" : submission.decision === "rejected" ? "Rejected" : "Pending"}
+            {decision === "approved" ? "Approved" : decision === "rejected" ? "Rejected" : "Pending"}
           </span>
         </div>
 
@@ -77,7 +139,7 @@ export default function DetailPage() {
         </div>
 
         <div className="bg-white rounded-b-lg shadow-md divide-y divide-gray-200">
-          {/* Section 1: Requester Details */}
+          {/* Section 1: Requester Details (Read-only) */}
           <div className="px-6 py-4 bg-gray-50">
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Requester Details</h2>
           </div>
@@ -91,72 +153,96 @@ export default function DetailPage() {
           <DetailRow label="Department" value={submission.department} />
           <DetailRow label="Date" value={submission.date} />
 
-          {/* Section 2: Drug Committee */}
-          <div className="px-6 py-4 bg-gray-50">
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Drug Committee Decision</h2>
+          {/* Section 2: Drug Committee Decision (Editable) */}
+          <div className="px-6 py-4 bg-indigo-50 border-t-2 border-indigo-200">
+            <h2 className="text-sm font-semibold text-indigo-700 uppercase tracking-wide">Drug Committee Decision</h2>
+            <p className="text-xs text-indigo-500 mt-1">Fill in the details below and save</p>
           </div>
 
-          <DetailRow label="Description" value={submission.description} isLong />
+          {/* Description */}
           <div className="px-6 py-4">
-            <p className="text-xs text-gray-400 mb-1">Decision</p>
-            <div className="flex gap-4 mt-1">
-              <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${
-                submission.decision === "approved"
-                  ? "bg-green-50 border-green-300 text-green-700"
-                  : "bg-gray-50 border-gray-200 text-gray-400"
+            <label className="block text-xs text-gray-400 mb-1">Description</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+              placeholder="Enter description..." />
+          </div>
+
+          {/* Decision Radio */}
+          <div className="px-6 py-4">
+            <label className="block text-xs text-gray-400 mb-2">Decision</label>
+            <div className="flex gap-4">
+              <label className={`flex items-center gap-2 cursor-pointer px-6 py-3 rounded-lg border-2 transition-all ${
+                decision === "approved" ? "border-green-500 bg-green-50" : "border-gray-200 hover:bg-gray-50"
               }`}>
-                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                  submission.decision === "approved" ? "border-green-500" : "border-gray-300"
-                }`}>
-                  {submission.decision === "approved" && <div className="w-2 h-2 bg-green-500 rounded-full"></div>}
-                </div>
-                Approved
-              </div>
-              <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${
-                submission.decision === "rejected"
-                  ? "bg-red-50 border-red-300 text-red-700"
-                  : "bg-gray-50 border-gray-200 text-gray-400"
+                <input type="radio" checked={decision === "approved"}
+                  onChange={() => setDecision("approved")} className="w-4 h-4 text-green-600" />
+                <span className="font-medium text-green-700">Approved</span>
+              </label>
+              <label className={`flex items-center gap-2 cursor-pointer px-6 py-3 rounded-lg border-2 transition-all ${
+                decision === "rejected" ? "border-red-500 bg-red-50" : "border-gray-200 hover:bg-gray-50"
               }`}>
-                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                  submission.decision === "rejected" ? "border-red-500" : "border-gray-300"
-                }`}>
-                  {submission.decision === "rejected" && <div className="w-2 h-2 bg-red-500 rounded-full"></div>}
-                </div>
-                Rejected
-              </div>
+                <input type="radio" checked={decision === "rejected"}
+                  onChange={() => setDecision("rejected")} className="w-4 h-4 text-red-600" />
+                <span className="font-medium text-red-700">Rejected</span>
+              </label>
             </div>
           </div>
 
-          <DetailRow label="Reasons / Remarks" value={submission.committeeRemarks} isLong />
-          <DetailRow label="Committee Member Details" value={submission.committeeMemberDetails} />
+          {/* Reasons / Remarks */}
+          <div className="px-6 py-4">
+            <label className="block text-xs text-gray-400 mb-1">Reasons / Remarks</label>
+            <textarea value={committeeRemarks} onChange={(e) => setCommitteeRemarks(e.target.value)} rows={3}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+              placeholder="Enter committee remarks..." />
+          </div>
+
+          {/* Committee Member Details */}
+          <div className="px-6 py-4">
+            <label className="block text-xs text-gray-400 mb-1">Committee Member Details</label>
+            <input type="text" value={committeeMemberDetails} onChange={(e) => setCommitteeMemberDetails(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Committee details..." />
+          </div>
 
           {/* Committee Signatures */}
           <div className="px-6 py-4 bg-gray-50">
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Committee Signatures</h2>
           </div>
 
-          {[1, 2, 3].map((n) => {
-            const name = submission[`member${n}Name` as keyof Submission] as string;
-            const date = submission[`member${n}Date` as keyof Submission] as string;
-            if (!name && !date) return null;
-            return (
-              <div key={n} className="px-6 py-4 flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-400 mb-1">Member {n}</p>
-                  <p className="text-gray-900 font-medium">{name || "-"}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-gray-400 mb-1">Date Signed</p>
-                  <p className="text-gray-700">{date || "-"}</p>
-                </div>
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="px-6 py-4 flex gap-4 items-end border-b border-gray-100 last:border-b-0">
+              <div className="flex-1">
+                <label className="block text-xs text-gray-400 mb-1">Member {i + 1} Name</label>
+                <input type="text" value={members[i].name}
+                  onChange={(e) => updateMember(i, "name", e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Member name" />
               </div>
-            );
-          })}
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Date</label>
+                <input type="date" value={members[i].date}
+                  onChange={(e) => updateMember(i, "date", e.target.value)}
+                  className="w-44 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+              </div>
+            </div>
+          ))}
         </div>
 
-        {/* Footer */}
+        {/* Save Button */}
         <div className="mt-6 flex justify-between items-center">
           <Link href="/report" className="text-indigo-600 hover:underline text-sm">&larr; Back to Report</Link>
+          <div className="flex items-center gap-3">
+            {saved && (
+              <span className="text-green-600 text-sm font-medium">Saved successfully!</span>
+            )}
+            <button onClick={handleSave} disabled={saving}
+              className="bg-indigo-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 text-sm">
+              {saving ? "Saving..." : "Save Decision"}
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 text-center">
           <p className="text-xs text-gray-400">ID: {submission.id.slice(0, 8)}...</p>
         </div>
       </div>
