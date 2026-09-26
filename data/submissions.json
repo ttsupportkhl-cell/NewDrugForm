@@ -1,1 +1,24 @@
-[]
+[
+  {
+    "id": "ef8af868-96c2-4c27-abce-26c9e3b9923a",
+    "submittedAt": "2026-09-26T11:07:40.099Z",
+    "drugUsedFor": "TEST1",
+    "genericDrugName": "TEST1",
+    "brandName": "TEST1",
+    "reasonRemark": "TEST1",
+    "applicantDetails": "TEST1",
+    "nameBlockLetters": "TEST1",
+    "department": "TEST1",
+    "date": "2026-09-26",
+    "description": "",
+    "decision": "",
+    "committeeRemarks": "",
+    "committeeMemberDetails": "",
+    "member1Name": "",
+    "member1Date": "",
+    "member2Name": "",
+    "member2Date": "",
+    "member3Name": "",
+    "member3Date": ""
+  }
+]
