@@ -1,0 +1,22 @@
+export type Submission = {
+  id: string;
+  submittedAt: string;
+  drugUsedFor: string;
+  genericDrugName: string;
+  brandName: string;
+  reasonRemark: string;
+  applicantDetails: string;
+  nameBlockLetters: string;
+  department: string;
+  date: string;
+  description: string;
+  decision: "approved" | "rejected" | "";
+  committeeRemarks: string;
+  committeeMemberDetails: string;
+  member1Name: string;
+  member1Date: string;
+  member2Name: string;
+  member2Date: string;
+  member3Name: string;
+  member3Date: string;
+};
