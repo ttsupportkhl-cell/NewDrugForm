@@ -33,7 +33,7 @@
     "department": "TEST1",
     "date": "2026-09-26",
     "description": "TEST1",
-    "decision": "approved",
+    "decision": "rejected",
     "committeeRemarks": "TEST1",
     "committeeMemberDetails": "TEST1",
     "member1Name": "TEST1",
