@@ -1,5 +1,27 @@
 [
   {
+    "id": "a4603192-c18b-41df-9161-3103b3dba761",
+    "submittedAt": "2026-09-28T06:00:35.174Z",
+    "drugUsedFor": "Diabetes Mellitus",
+    "genericDrugName": "Metformin Hydrochloride",
+    "brandName": "Glycomet – USV Pvt. Ltd.",
+    "reasonRemark": "Used for blood glucose control in patients with Type 2 Diabetes Mellitus.",
+    "applicantDetails": "Used for blood glucose control in patients with Type 2 Diabetes Mellitus.",
+    "nameBlockLetters": "DR. RAVI KUMAR",
+    "department": "General Medicine",
+    "date": "2026-09-28",
+    "description": "",
+    "decision": "",
+    "committeeRemarks": "",
+    "committeeMemberDetails": "",
+    "member1Name": "",
+    "member1Date": "",
+    "member2Name": "",
+    "member2Date": "",
+    "member3Name": "",
+    "member3Date": ""
+  },
+  {
     "id": "ef8af868-96c2-4c27-abce-26c9e3b9923a",
     "submittedAt": "2026-09-26T11:07:40.099Z",
     "drugUsedFor": "TEST1",
