@@ -1,5 +1,27 @@
 [
   {
+    "id": "1a2b0f60-f7a0-43cd-81d5-5e5dd51cd41a",
+    "submittedAt": "2026-09-28T06:20:29.576Z",
+    "drugUsedFor": "Bacterial Infections",
+    "genericDrugName": "Ceftriaxone",
+    "brandName": "Monocef – Aristo Pharmaceuticals Pvt. Ltd.",
+    "reasonRemark": "Required for treatment of moderate to severe bacterial infections in hospitalized patients.",
+    "applicantDetails": "Requested for inclusion in the hospital formulary based on regular clinical requirement.",
+    "nameBlockLetters": "DR. ANIL KUMAR",
+    "department": "General Medicine",
+    "date": "2026-09-28",
+    "description": "",
+    "decision": "",
+    "committeeRemarks": "",
+    "committeeMemberDetails": "",
+    "member1Name": "",
+    "member1Date": "",
+    "member2Name": "",
+    "member2Date": "",
+    "member3Name": "",
+    "member3Date": ""
+  },
+  {
     "id": "a4603192-c18b-41df-9161-3103b3dba761",
     "submittedAt": "2026-09-28T06:00:35.174Z",
     "drugUsedFor": "Diabetes Mellitus",
